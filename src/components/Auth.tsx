@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/auth-context';
-import { useDbHealth } from '../lib/db-health';
 import logo from '../assets/logo26.png';
 
 export function Auth() {
@@ -10,8 +9,6 @@ export function Auth() {
   const [loading, setLoading] = useState(false);
 
   const { signIn } = useAuth();
-  const { status: dbStatus } = useDbHealth();
-  const dbNotReady = dbStatus === 'waking' || dbStatus === 'checking';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,21 +71,12 @@ export function Auth() {
               </div>
             )}
 
-            {dbNotReady && (
-              <div className="flex items-center gap-2 text-amber-400 text-sm bg-amber-900/20 px-3 py-2 rounded-lg border border-amber-800/50">
-                <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
-                <span>
-                  Waking up the database... This may take a moment.
-                </span>
-              </div>
-            )}
-
             <button
               type="submit"
-              disabled={loading || dbNotReady}
+              disabled={loading}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Please wait...' : dbNotReady ? 'Waiting for database...' : 'Login'}
+              {loading ? 'Please wait...' : 'Login'}
             </button>
           </form>
         </div>

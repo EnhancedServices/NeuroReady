@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './lib/auth-context';
-import { DbHealthProvider } from './lib/db-health';
 import { Auth } from './components/Auth';
 import { Onboarding } from './components/Onboarding';
 import { TestBattery } from './components/TestBattery';
 import { AthleteDashboard } from './components/AthleteDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { SessionResultScreen } from './components/SessionResultScreen';
-import { DbStatusBanner } from './components/DbStatusBanner';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import type { TestResult, PreTestContext, SessionResult } from './types';
 import { buildBaseline, scoreBattery, SessionData, MetricKey } from './lib/scoring';
@@ -316,11 +314,8 @@ export default function App() {
   }
 
   return (
-    <DbHealthProvider>
-      <DbStatusBanner />
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </DbHealthProvider>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
