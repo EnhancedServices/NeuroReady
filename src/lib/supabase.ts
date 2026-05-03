@@ -15,7 +15,7 @@ export const checkDbHealth = async (timeoutMs = 65000): Promise<boolean> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const { error } = await supabase.from('admins').select('id').limit(1).abortSignal(controller.signal);
+    const { error } = await supabase.rpc('health_ping').abortSignal(controller.signal);
     return !error;
   } catch {
     return false;

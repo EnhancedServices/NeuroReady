@@ -18,7 +18,7 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_ANON_KEY")!
     );
 
-    const { error } = await supabase.from("profiles").select("id").limit(1);
+    const { error } = await supabase.rpc("health_ping");
 
     if (error) {
       return new Response(
