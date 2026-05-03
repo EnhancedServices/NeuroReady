@@ -9,15 +9,17 @@ export const isSupabaseConfigured = () => {
   return Boolean(supabaseUrl && supabaseAnonKey);
 };
 
-export const checkDbHealth = async (timeoutMs = 8000): Promise<boolean> => {
+/** Paused Postgres (e.g. Supabase free / scale-to-zero) often needs ~30–60s to wake; shorter timeouts falsely report unreachable. */
+export const checkDbHealth = async (timeoutMs = 65000): Promise<boolean> => {
   if (!supabaseUrl || !supabaseAnonKey) return false;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const { error } = await supabase.from('admins').select('id').limit(1).abortSignal(controller.signal);
-    clearTimeout(timer);
     return !error;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timer);
   }
 };
