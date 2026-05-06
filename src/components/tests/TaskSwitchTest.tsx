@@ -220,7 +220,7 @@ export function TaskSwitchTest({ onComplete, onCancel }: TaskSwitchTestProps) {
   const isOddEven = currentTrial.taskType === 'odd-even';
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4 overflow-hidden">
       {showCancelConfirm && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 max-w-md w-full">
@@ -264,7 +264,7 @@ export function TaskSwitchTest({ onComplete, onCancel }: TaskSwitchTestProps) {
           </>
         ) : (
           <>
-            <div className="text-6xl font-bold text-gray-500 mb-2">{timeLeft}s</div>
+            <div className="text-4xl sm:text-6xl font-bold text-gray-500 mb-2">{timeLeft}s</div>
             <div className="text-gray-600 text-lg">Task Switch Test</div>
           </>
         )}
@@ -276,22 +276,22 @@ export function TaskSwitchTest({ onComplete, onCancel }: TaskSwitchTestProps) {
         </div>
       </div>
 
-      <div className="mb-20">
-        <div className="text-9xl font-bold text-white">
+      <div className="mb-10 sm:mb-20">
+        <div className="text-7xl sm:text-9xl font-bold text-white">
           {currentTrial.number}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-8 w-full max-w-3xl">
+      <div className="grid grid-cols-2 gap-4 sm:gap-8 w-full max-w-3xl">
         <button
           onClick={() => handleResponse(true)}
-          className="py-12 text-4xl font-bold rounded-xl transition-all hover:scale-105 active:scale-95 bg-blue-600 hover:bg-blue-700 text-white"
+          className="py-8 sm:py-12 text-2xl sm:text-4xl font-bold rounded-xl transition-all hover:scale-105 active:scale-95 bg-blue-600 hover:bg-blue-700 text-white"
         >
           {isOddEven ? 'ODD' : 'HIGH'}
         </button>
         <button
           onClick={() => handleResponse(false)}
-          className="py-12 text-4xl font-bold rounded-xl transition-all hover:scale-105 active:scale-95 bg-gray-700 hover:bg-gray-600 text-white"
+          className="py-8 sm:py-12 text-2xl sm:text-4xl font-bold rounded-xl transition-all hover:scale-105 active:scale-95 bg-gray-700 hover:bg-gray-600 text-white"
         >
           {isOddEven ? 'EVEN' : 'LOW'}
         </button>

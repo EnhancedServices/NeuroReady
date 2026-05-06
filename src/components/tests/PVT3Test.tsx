@@ -226,7 +226,7 @@ export function PVT3Test({ onComplete, onCancel }: PVT3TestProps) {
 
   return (
     <div
-      className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4 cursor-pointer select-none"
+      className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4 overflow-hidden cursor-pointer select-none"
       onClick={handleResponse}
     >
       {showCancelConfirm && (
@@ -278,7 +278,7 @@ export function PVT3Test({ onComplete, onCancel }: PVT3TestProps) {
           </>
         ) : (
           <>
-            <div className="text-6xl font-bold text-gray-500 mb-2">{timeLeft}s</div>
+            <div className="text-4xl sm:text-6xl font-bold text-gray-500 mb-2">{timeLeft}s</div>
             <div className="text-gray-600 text-lg">PVT-3 Test - Tap anywhere</div>
           </>
         )}
@@ -286,7 +286,7 @@ export function PVT3Test({ onComplete, onCancel }: PVT3TestProps) {
 
       <div className="flex-1 flex items-center justify-center w-full">
         {showStimulus ? (
-          <div className="text-9xl animate-pulse">⚡</div>
+          <div className="text-7xl sm:text-9xl animate-pulse">⚡</div>
         ) : (
           <div className="text-6xl text-gray-800">...</div>
         )}

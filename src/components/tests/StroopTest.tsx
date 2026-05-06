@@ -206,7 +206,7 @@ export function StroopTest({ onComplete, onCancel }: StroopTestProps) {
   if (!started || !currentTrial) return null;
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4 overflow-hidden">
       {showCancelConfirm && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 max-w-md w-full">
@@ -250,27 +250,27 @@ export function StroopTest({ onComplete, onCancel }: StroopTestProps) {
           </>
         ) : (
           <>
-            <div className="text-6xl font-bold text-gray-500 mb-2">{timeLeft}s</div>
+            <div className="text-4xl sm:text-6xl font-bold text-gray-500 mb-2">{timeLeft}s</div>
             <div className="text-gray-600 text-lg">Stroop Test</div>
           </>
         )}
       </div>
 
-      <div className="mb-20">
+      <div className="mb-10 sm:mb-20 px-4 overflow-hidden">
         <div
-          className="text-9xl font-bold uppercase"
+          className="text-6xl sm:text-8xl font-bold uppercase"
           style={{ color: COLOR_MAP[currentTrial.color] }}
         >
           {currentTrial.word}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 w-full max-w-3xl">
+      <div className="grid grid-cols-2 gap-3 sm:gap-6 w-full max-w-3xl">
         {COLORS.map((color) => (
           <button
             key={color}
             onClick={() => handleResponse(color)}
-            className="py-12 text-3xl font-bold rounded-xl transition-all hover:scale-105 active:scale-95"
+            className="py-8 sm:py-12 text-2xl sm:text-3xl font-bold rounded-xl transition-all hover:scale-105 active:scale-95"
             style={{
               backgroundColor: COLOR_MAP[color],
               color: color === 'yellow' ? '#000' : '#fff',
