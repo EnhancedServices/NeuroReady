@@ -7,7 +7,7 @@ interface OnboardingProps {
 
 export function Onboarding({ onComplete }: OnboardingProps) {
   const { profile } = useAuth();
-  const baselineNeeded = 3;
+  const baselineNeeded = 2;
   const completed = profile?.baseline_sessions_count || 0;
 
   return (

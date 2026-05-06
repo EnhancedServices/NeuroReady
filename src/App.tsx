@@ -6,6 +6,7 @@ import { TestBattery } from './components/TestBattery';
 import { AthleteDashboard } from './components/AthleteDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { SessionResultScreen } from './components/SessionResultScreen';
+import { BaselineResultScreen } from './components/BaselineResultScreen';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import type { TestResult, PreTestContext, SessionResult } from './types';
 import { buildBaseline, scoreBattery, SessionData, MetricKey } from './lib/scoring';
@@ -14,23 +15,37 @@ import { analyzeHrv } from './lib/hrv-engine';
 import { AlertCircle } from 'lucide-react';
 import type { HrvAnalysis, HrvHistoryEntry } from './types';
 
-type AppView = 'dashboard' | 'onboarding' | 'testing' | 'results';
+type AppView = 'dashboard' | 'onboarding' | 'testing' | 'results' | 'baseline_result';
 
 function AppContent() {
   const { user, profile, loading, refreshProfile } = useAuth();
   const [view, setView] = useState<AppView>('dashboard');
   const [sessionResult, setSessionResult] = useState<SessionResult | null>(null);
+  const [baselineResult, setBaselineResult] = useState<{
+    stroopInterferenceMs: number;
+    stroopErrors: number;
+    switchCostMs: number;
+    switchErrors: number;
+    pvtMedianRtMs: number;
+    pvtLapses: number;
+    pvtFalseStarts: number;
+    count: number;
+  } | null>(null);
   const [preTestHrvAnalysis, setPreTestHrvAnalysis] = useState<HrvAnalysis | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile && profile.role === 'athlete') {
-      if (!profile.onboarding_complete && profile.baseline_sessions_count < 3) {
-        setView('onboarding');
-      } else {
-        setView('dashboard');
-      }
+      setView((current) => {
+        if (['testing', 'results', 'baseline_result'].includes(current)) {
+          return current;
+        }
+        if (!profile.onboarding_complete && profile.baseline_sessions_count < 2) {
+          return 'onboarding';
+        }
+        return 'dashboard';
+      });
     } else if (profile && profile.role === 'admin') {
       setView('dashboard');
     }
@@ -137,7 +152,7 @@ function AppContent() {
 
     let result: SessionResult | null = null;
 
-    if (baseline && profile.baseline_sessions_count >= 3) {
+    if (baseline && profile.baseline_sessions_count >= 2) {
       const batteryScore = scoreBattery(todayMetrics, baseline);
       const historicalPatterns = analyzeHistoricalPatterns(allSessions || []);
       result = generateSessionResult(batteryScore, context, historicalPatterns, hrvHistory || [], allSessions || []);
@@ -160,7 +175,7 @@ function AppContent() {
       hard_training_24h: context.trainingLoadStatus === 'high' || context.trainingLoadStatus === 'very_high',
       illness_symptoms: context.illnessSymptoms,
       travel: context.travel,
-      is_baseline: profile.baseline_sessions_count < 3,
+      is_baseline: profile.baseline_sessions_count < 2,
       test_reason: context.testReason,
       planned_session_type: context.plannedSessionType,
       sleep_quality: context.sleepQuality,
@@ -210,13 +225,13 @@ function AppContent() {
       }
     }
 
-    if (profile.baseline_sessions_count < 3) {
+    if (profile.baseline_sessions_count < 2) {
       const newCount = profile.baseline_sessions_count + 1;
       await supabase
         .from('neuro_profiles')
         .update({
           baseline_sessions_count: newCount,
-          onboarding_complete: newCount >= 3,
+          onboarding_complete: newCount >= 2,
         })
         .eq('id', profile.id);
 
@@ -227,7 +242,17 @@ function AppContent() {
       setSessionResult(result);
       setView('results');
     } else {
-      setView('dashboard');
+      setBaselineResult({
+        stroopInterferenceMs: results.stroopInterferenceMs,
+        stroopErrors: results.stroopErrors,
+        switchCostMs: results.switchCostMs,
+        switchErrors: results.switchErrors,
+        pvtMedianRtMs: results.pvtMedianRtMs,
+        pvtLapses: results.pvtLapses,
+        pvtFalseStarts: results.pvtFalseStarts,
+        count: Math.min((profile?.baseline_sessions_count || 0) + 1, 2),
+      });
+      setView('baseline_result');
     }
     } catch {
       setSaveError('Failed to save your session. Please try again.');
@@ -278,6 +303,26 @@ function AppContent() {
 
   if (view === 'testing') {
     return <TestBattery onComplete={handleTestComplete} onCancel={() => setView('dashboard')} existingHrvAnalysis={preTestHrvAnalysis} />;
+  }
+
+  if (view === 'baseline_result' && baselineResult) {
+    return (
+      <BaselineResultScreen
+        stroopInterferenceMs={baselineResult.stroopInterferenceMs}
+        stroopErrors={baselineResult.stroopErrors}
+        switchCostMs={baselineResult.switchCostMs}
+        switchErrors={baselineResult.switchErrors}
+        pvtMedianRtMs={baselineResult.pvtMedianRtMs}
+        pvtLapses={baselineResult.pvtLapses}
+        pvtFalseStarts={baselineResult.pvtFalseStarts}
+        baselineCount={baselineResult.count}
+        baselineTarget={2}
+        onContinue={() => {
+          setBaselineResult(null);
+          setView('dashboard');
+        }}
+      />
+    );
   }
 
   if (view === 'results' && sessionResult) {
