@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { supabase, clearPersistedSupabaseSession } from './supabase';
 import { Profile } from '../types';
 
 interface AuthContextType {
@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string, userEmail: string) => {
-    let { data, error } = await supabase
+    let { data } = await supabase
       .from('neuro_profiles')
       .select('*')
       .eq('id', userId)
@@ -84,8 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    if (user) {
-      const prof = await fetchProfile(user.id);
+    if (user?.email) {
+      const prof = await fetchProfile(user.id, user.email);
       setProfile(prof);
     }
   };
@@ -96,23 +96,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        const prof = await fetchProfile(session.user.id, session.user.email!);
-        setProfile(prof);
+        const userId = session.user.id;
+        const prof = await fetchProfile(userId, session.user.email!);
+        const { data: { session: latest } } = await supabase.auth.getSession();
+        if (latest?.user?.id === userId) {
+          setProfile(prof);
+        }
       }
 
       setLoading(false);
     })();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      (async () => {
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          const prof = await fetchProfile(session.user.id, session.user.email!);
-          setProfile(prof);
-        } else {
+      void (async () => {
+        if (!session?.user) {
+          setUser(null);
           setProfile(null);
+          return;
         }
+
+        const userId = session.user.id;
+        const email = session.user.email!;
+
+        setUser(session.user);
+
+        const prof = await fetchProfile(userId, email);
+
+        const { data: { session: latest } } = await supabase.auth.getSession();
+        if (!latest?.user || latest.user.id !== userId) {
+          return;
+        }
+
+        setProfile(prof);
       })();
     });
 
@@ -130,7 +145,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const profile = await fetchProfile(data.user.id, data.user.email!);
       if (!profile) {
-        await supabase.auth.signOut();
+        try {
+          const { error: soErr } = await supabase.auth.signOut();
+          if (soErr) clearPersistedSupabaseSession();
+        } catch {
+          clearPersistedSupabaseSession();
+        }
         throw new Error('Access denied');
       }
 
@@ -141,7 +161,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        clearPersistedSupabaseSession();
+      }
+    } catch {
+      clearPersistedSupabaseSession();
+    } finally {
+      setUser(null);
+      setProfile(null);
+    }
   };
 
   return (
