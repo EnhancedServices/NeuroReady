@@ -240,7 +240,7 @@ export function StroopTest({ onComplete, onCancel }: StroopTestProps) {
         <span className="font-medium">Return to Dashboard</span>
       </button>
 
-      <div className="text-center mb-12">
+      <div className="text-center mt-20 sm:mt-0 mb-12">
         {inWarmup ? (
           <>
             <div className="text-4xl font-bold text-amber-400 mb-2">
