@@ -12,6 +12,7 @@ import type { TestResult, PreTestContext, SessionResult } from './types';
 import { buildBaseline, scoreBattery, SessionData, MetricKey } from './lib/scoring';
 import { generateSessionResult, analyzeHistoricalPatterns } from './lib/risk-engine';
 import { analyzeHrv } from './lib/hrv-engine';
+import { buildProvisionalFeedback, type ProvisionalFeedback } from './lib/provisional-feedback';
 import { AlertCircle } from 'lucide-react';
 import type { HrvAnalysis, HrvHistoryEntry } from './types';
 
@@ -22,13 +23,8 @@ function AppContent() {
   const [view, setView] = useState<AppView>('dashboard');
   const [sessionResult, setSessionResult] = useState<SessionResult | null>(null);
   const [baselineResult, setBaselineResult] = useState<{
-    stroopInterferenceMs: number;
-    stroopErrors: number;
-    switchCostMs: number;
-    switchErrors: number;
-    pvtMedianRtMs: number;
-    pvtLapses: number;
-    pvtFalseStarts: number;
+    feedback: ProvisionalFeedback;
+    hrvAnalysis: HrvAnalysis | null;
     count: number;
   } | null>(null);
   const [preTestHrvAnalysis, setPreTestHrvAnalysis] = useState<HrvAnalysis | null>(null);
@@ -242,14 +238,27 @@ function AppContent() {
       setSessionResult(result);
       setView('results');
     } else {
+      const priorSession = (allSessions || []).find((s) => s.date !== dateStr);
+      const previousMetrics: Partial<Record<MetricKey, number>> | null = priorSession
+        ? {
+            stroop_interference_ms: priorSession.stroop_interference_ms ?? undefined,
+            stroop_errors: priorSession.stroop_errors ?? undefined,
+            switch_cost_ms: priorSession.switch_cost_ms ?? undefined,
+            switch_errors: priorSession.switch_errors ?? undefined,
+            pvt_median_rt_ms: priorSession.pvt_median_rt_ms ?? undefined,
+            pvt_lapses: priorSession.pvt_lapses ?? undefined,
+            pvt_false_starts: priorSession.pvt_false_starts ?? undefined,
+          }
+        : null;
+
+      const baselineHrvAnalysis =
+        hrvHistory && hrvHistory.length > 0
+          ? analyzeHrv(hrvHistory as HrvHistoryEntry[], allSessions || [])
+          : null;
+
       setBaselineResult({
-        stroopInterferenceMs: results.stroopInterferenceMs,
-        stroopErrors: results.stroopErrors,
-        switchCostMs: results.switchCostMs,
-        switchErrors: results.switchErrors,
-        pvtMedianRtMs: results.pvtMedianRtMs,
-        pvtLapses: results.pvtLapses,
-        pvtFalseStarts: results.pvtFalseStarts,
+        feedback: buildProvisionalFeedback(todayMetrics, previousMetrics),
+        hrvAnalysis: baselineHrvAnalysis,
         count: Math.min((profile?.baseline_sessions_count || 0) + 1, 2),
       });
       setView('baseline_result');
@@ -313,13 +322,8 @@ function AppContent() {
   if (view === 'baseline_result' && baselineResult) {
     return (
       <BaselineResultScreen
-        stroopInterferenceMs={baselineResult.stroopInterferenceMs}
-        stroopErrors={baselineResult.stroopErrors}
-        switchCostMs={baselineResult.switchCostMs}
-        switchErrors={baselineResult.switchErrors}
-        pvtMedianRtMs={baselineResult.pvtMedianRtMs}
-        pvtLapses={baselineResult.pvtLapses}
-        pvtFalseStarts={baselineResult.pvtFalseStarts}
+        feedback={baselineResult.feedback}
+        hrvAnalysis={baselineResult.hrvAnalysis}
         baselineCount={baselineResult.count}
         baselineTarget={2}
         onContinue={() => {
