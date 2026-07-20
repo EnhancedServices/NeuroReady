@@ -104,7 +104,7 @@ function AppContent() {
 
     if (checkError) {
       console.error('Error checking existing session:', checkError);
-      return;
+      throw checkError;
     }
 
     const { data: allSessions, error: sessionsError } = await supabase
@@ -115,7 +115,7 @@ function AppContent() {
 
     if (sessionsError) {
       console.error('Error loading sessions:', sessionsError);
-      return;
+      throw sessionsError;
     }
 
     const sessionData: SessionData[] = (allSessions || []).map(s => ({
@@ -214,14 +214,14 @@ function AppContent() {
 
       if (error) {
         console.error('Error updating session:', error);
-        return;
+        throw error;
       }
     } else {
       const { error } = await supabase.from('neuro_sessions').insert(sessionPayload);
 
       if (error) {
         console.error('Error inserting session:', error);
-        return;
+        throw error;
       }
     }
 
@@ -254,8 +254,13 @@ function AppContent() {
       });
       setView('baseline_result');
     }
-    } catch {
-      setSaveError('Failed to save your session. Please try again.');
+    } catch (err) {
+      const detail =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message?: unknown }).message)
+          : String(err);
+      console.error('Failed to save session:', err);
+      setSaveError(`Failed to save your session: ${detail}`);
       setView('dashboard');
     } finally {
       setSaving(false);
@@ -329,7 +334,25 @@ function AppContent() {
     return <SessionResultScreen result={sessionResult} hrvAnalysis={sessionResult.hrvAnalysis} onContinue={handleResultsContinue} />;
   }
 
-  return <AthleteDashboard onStartTest={handleStartTest} />;
+  return (
+    <>
+      {saveError && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-lg w-[calc(100%-2rem)]">
+          <div className="flex items-start gap-3 bg-red-950 border border-red-500/40 rounded-lg p-4 shadow-lg">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-200 flex-1">{saveError}</p>
+            <button
+              onClick={() => setSaveError(null)}
+              className="text-red-300 hover:text-white text-sm font-bold"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+      <AthleteDashboard onStartTest={handleStartTest} />
+    </>
+  );
 }
 
 export default function App() {
